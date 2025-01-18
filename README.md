@@ -9,7 +9,6 @@ project steps:
 3. pipenv shell
 4. pipenv install
 5. pipenv install django psycopg2-binary djangorestframework
-
 6. psql -f create-database.sql
 7. pip install Faker
 8. python manage.py generate_movies
