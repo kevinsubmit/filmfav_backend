@@ -11,10 +11,10 @@ init
 
 database env
 
-   make sure your local have the file create-database.sql
+make sure your local have the file create-database.sql
 4. psql -f create-database.sql
 
-   the below two commands can make 200 fake movies datas in your local databases 
+the below two commands can make 200 fake movies datas in your local databases 
 5. pip install Faker
 6. python manage.py generate_movies
 
