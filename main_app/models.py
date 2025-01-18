@@ -1,13 +1,15 @@
 from django.db import models
-
+from django.contrib.auth.models import User
 # 用于存储用户的基本信息。# Used to store basic user information.
-class User(models.Model):
-    username = models.CharField(max_length=255, unique=True)
-    email = models.EmailField(unique=True)
-    password_hash = models.CharField(max_length=255)
+# no need django already do it for us
 
-    def __str__(self):
-        return self.username
+# class User(models.Model):
+#     username = models.CharField(max_length=255, unique=True)
+#     email = models.EmailField(unique=True)
+#     password_hash = models.CharField(max_length=255)
+
+#     def __str__(self):
+#         return self.username
 
 
 # 用于存储电影的基本信息。# Used to store basic information of movies.
