@@ -12,6 +12,13 @@ from django.contrib.auth.models import User
 #         return self.username
 
 
+ # 用于存储电影类型。Used to store movie genres.
+class Genre(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+    
 # 用于存储电影的基本信息。# Used to store basic information of movies.
 class Movie(models.Model):
     title = models.CharField(max_length=255)
@@ -19,16 +26,13 @@ class Movie(models.Model):
     year_made = models.IntegerField()
     poster_url = models.URLField()
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    genres = models.ManyToManyField(Genre, related_name='movies')
 
     def __str__(self):
         return self.title
 
- # 用于存储电影类型。Used to store movie genres.
-class Genre(models.Model):
-    name = models.CharField(max_length=100, unique=True)
 
-    def __str__(self):
-        return self.name
 
 
 # movie_genre 中间表模型（多对多关系）
@@ -119,3 +123,4 @@ class MyMoviesMovie(models.Model):
 
     def __str__(self):
         return f"{self.my_movies.user.username} watched {self.movie.title}"
+
