@@ -98,14 +98,6 @@ class WatchListSerializer(serializers.ModelSerializer):
         model = WatchList
         fields = ['id', 'user', 'movies', 'added_at']
         read_only_fields = ['user']
-        user = User.objects.create_user(
-            username=validated_data["username"],
-            #   email=validated_data['email'],
-            password=validated_data[
-                "password"
-            ],  # Ensures the password is hashed correctly
-        )
-        return user
       
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
