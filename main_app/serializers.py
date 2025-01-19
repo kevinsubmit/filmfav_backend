@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from django.contrib.auth.models import User # add this line to list of imports
-from .models import Movie, Genre, WatchList, WatchListMovie, Review, Comment
+from .models import Movie, Genre, WatchList, WatchListMovie, Review, Comment, MyMovies, MyMoviesMovie
 from django.contrib.auth.models import User  # add this line to list of imports
 
 from .models import Review, Comment
@@ -29,6 +29,7 @@ class GenreSerializer(serializers.ModelSerializer):
         model = Genre
         fields = ['id', 'name']
 
+
 class MovieSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     genre_ids = serializers.PrimaryKeyRelatedField(
@@ -38,7 +39,6 @@ class MovieSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-    average_rating = serializers.SerializerMethodField()
     
     class Meta:
         model = Movie
@@ -48,17 +48,10 @@ class MovieSerializer(serializers.ModelSerializer):
             'description', 
             'year_made', 
             'poster_url', 
-            'genres', 
-            'genre_ids',
-            'average_rating', 
             'created_at'
+            'genres', 
         ]
-    
-    def get_average_rating(self, obj):
-        reviews = Review.objects.filter(movie=obj)
-        if reviews.exists():
-            return sum(float(review.rating) for review in reviews) / reviews.count()
-        return None
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
@@ -117,3 +110,24 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ["id", "user", "review", "text", "created_at"]
 
+class MyMoviesMovieSerializer(serializers.ModelSerializer):
+    movie = MovieSerializer(read_only=True)
+    movie_id = serializers.PrimaryKeyRelatedField(
+        queryset=Movie.objects.all(),
+        source='movie',
+        write_only=True
+    )
+    
+    class Meta:
+        model = MyMoviesMovie
+        fields = ['id', 'movie', 'movie_id']
+        read_only_fields = ['my_movies']
+
+class MyMoviesSerializer(serializers.ModelSerializer):
+    movies = MyMoviesMovieSerializer(source='mymoviesmovie_set', many=True, read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+    
+    class Meta:
+        model = MyMovies
+        fields = ['id', 'user', 'movies', 'watched_at']
+        read_only_fields = ['user']

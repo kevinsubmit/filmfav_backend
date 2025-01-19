@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import Home, CreateUserView, LoginView,ReviewListCreateAPIView,ReviewDetailAPIView,CommentListCreateAPIView,CommentDetailAPIView,MovieView,  MovieView, MovieDetailView, WatchListView, AddToWatchListView,RemoveFromWatchListView
+from .views import Home, CreateUserView, LoginView,ReviewListCreateAPIView,ReviewDetailAPIView,CommentListCreateAPIView,CommentDetailAPIView,MovieView,  MovieView, MovieDetailView, WatchListView, AddToWatchListView, RemoveFromWatchListView,  MyMoviesView, AddToMyMoviesView, RemoveFromMyMoviesView
 
 
 urlpatterns = [
@@ -16,5 +16,8 @@ urlpatterns = [
     path('watchlist/', WatchListView.as_view(), name='watchlist'),
     path('watchlist/add/<int:pk>/', AddToWatchListView.as_view(), name='add-to-watchlist'),
     path('watchlist/remove/<int:pk>/', RemoveFromWatchListView.as_view(), name='remove-from-watchlist'),
+    path('mymovies/', MyMoviesView.as_view(), name='mymovies'),
+    path('mymovies/add/<int:pk>/', AddToMyMoviesView.as_view(), name='add-to-mymovies'),
+    path('mymovies/remove/<int:pk>/', RemoveFromMyMoviesView.as_view(), name='remove-from-mymovies'),
 ]
 
