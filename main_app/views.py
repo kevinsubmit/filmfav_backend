@@ -1,12 +1,11 @@
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions, filters # modify these imports to match
 # from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
-
-
 
 from .serializers import (
     UserSerializer,
@@ -36,6 +35,8 @@ from django.shortcuts import get_object_or_404
 
 
 from .serializers import UserSerializer, ReviewSerializer, CommentSerializer
+
+from .filters import MovieFilter
 
 
 # Create your views here.
@@ -168,6 +169,12 @@ class MovieView(APIView):
     filterset_fields = ['year_made', 'genres__name']
     search_fields = ['title', 'description']
     ordering_fields = ['title', 'year_made', 'created_at']
+
+class MovieListView(ListAPIView):
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = MovieFilter
 
 class MovieDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Movie.objects.all()
