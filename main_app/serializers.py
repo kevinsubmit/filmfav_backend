@@ -31,15 +31,6 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class MovieSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True, read_only=True)
-    genre_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Genre.objects.all(),
-        source='genres',
-        write_only=True,
-        required=False
-    )
-    average_rating = serializers.SerializerMethodField()
-    
     class Meta:
         model = Movie
         fields = [
@@ -49,16 +40,9 @@ class MovieSerializer(serializers.ModelSerializer):
             'year_made', 
             'poster_url', 
             'genres', 
-            'genre_ids',
-            'average_rating', 
-            'created_at'
         ]
     
-    def get_average_rating(self, obj):
-        reviews = Review.objects.filter(movie=obj)
-        if reviews.exists():
-            return sum(float(review.rating) for review in reviews) / reviews.count()
-        return None
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
