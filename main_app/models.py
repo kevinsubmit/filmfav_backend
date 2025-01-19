@@ -25,8 +25,6 @@ class Movie(models.Model):
     description = models.TextField()
     year_made = models.IntegerField()
     poster_url = models.URLField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    
     genres = models.ManyToManyField(Genre, related_name='movies')
 
     def __str__(self):

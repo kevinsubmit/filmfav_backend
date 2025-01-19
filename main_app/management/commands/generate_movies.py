@@ -1,28 +1,38 @@
-# movies/management/commands/generate_movies.py
+# myapp/management/commands/generate_fake_movies.py
 
 from django.core.management.base import BaseCommand
 from faker import Faker
-from main_app.models import Movie
+from main_app.models import Movie, Genre
+import random
 
 class Command(BaseCommand):
-    help = 'Generate 200 fake movie records'
+    help = 'Generate fake movie data'
 
     def handle(self, *args, **kwargs):
         fake = Faker()
+        
+        # Create some genres first if they don't exist
+        genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance', 'Thriller']
+        for genre_name in genres:
+            Genre.objects.get_or_create(name=genre_name)
 
-        # 使用 Faker 生成 200 条数据
+        # Generate 200 fake Movie entries
         for _ in range(200):
-            title = fake.sentence(nb_words=5)  # 生成标题
-            description = fake.text(max_nb_chars=300)  # 生成描述
-            year_made = fake.year()  # 生成年份
-            poster_url = fake.image_url()  # 生成海报 URL
-
-            # 创建 Movie 对象并保存
-            Movie.objects.create(
+            title = fake.sentence(nb_words=4)
+            description = fake.text(max_nb_chars=200)
+            year_made = fake.year()
+            poster_url = fake.image_url()
+            
+            # Create the Movie instance
+            movie = Movie.objects.create(
                 title=title,
                 description=description,
                 year_made=year_made,
                 poster_url=poster_url
             )
 
-        self.stdout.write(self.style.SUCCESS('Successfully created 200 fake movie records.'))
+            # Get the list of genres and assign random genres to the movie (using ManyToManyField)
+            genre_list = list(Genre.objects.all())  # Convert QuerySet to list
+            movie.genres.set(random.sample(genre_list, random.randint(1, 3)))  # Assign 1 to 3 random genres
+
+        self.stdout.write(self.style.SUCCESS('Successfully generated 200 fake movies'))
