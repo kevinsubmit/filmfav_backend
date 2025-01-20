@@ -1,25 +1,11 @@
 from rest_framework import serializers
-
-from django.contrib.auth.models import User  # add this line to list of imports
-from .models import (
-    Movie,
-    Genre,
-    WatchList,
-    WatchListMovie,
-    Review,
-    Comment,
-    MyMovies,
-    MyMoviesMovie,
-)
-from django.contrib.auth.models import User  # add this line to list of imports
-
-from .models import Review, Comment
+from django.contrib.auth.models import User
+from .models import Movie, Genre, Review, Comment, Watch_list, My_movies
 
 
+# User Serializer
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True
-    )  # Add a password field, make it write-only
+    password = serializers.CharField(write_only=True)  # password is write-only
 
     class Meta:
         model = User
@@ -28,23 +14,26 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data["username"],
-            #   email=validated_data['email'],
-            password=validated_data[
-                "password"
-            ],  # Ensures the password is hashed correctly
+            password=validated_data["password"],  # password is hashed
         )
-
         return user
 
 
+# Genre Serializer
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ["id", "name"]
 
 
+# Movie Serializer
 class MovieSerializer(serializers.ModelSerializer):
+    # genres 是 ManyToMany 关系，所以我们使用 GenreSerializer 序列化相关数据
+    # genres is a ManyToMany relationship, so we use GenreSerializer to serialize related data
     genres = GenreSerializer(many=True, read_only=True)
+
+    # genre_ids 是接收前端传过来的 Genre ID，用于多对多关系的更新
+    # genre_ids is used to receive Genre IDs from the frontend for updating the many-to-many relationship
     genre_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Genre.objects.all(),
@@ -52,6 +41,9 @@ class MovieSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
+
+    # average_rating 是一个计算字段，用来返回电影的平均评分
+    # average_rating is a computed field to return the movie's average rating
     average_rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -68,30 +60,41 @@ class MovieSerializer(serializers.ModelSerializer):
         ]
 
     def get_average_rating(self, obj):
+        # 计算电影的平均评分
+        # Calculate the movie's average rating
         reviews = Review.objects.filter(movie=obj)
         if reviews.exists():
             return sum(float(review.rating) for review in reviews) / reviews.count()
         return None
 
 
+# Review Serializer
 class ReviewSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source="user.username", read_only=True)
-    movie_title = serializers.CharField(source="movie.title", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)  # 显示用户名 / Display the username
+    movie_title = serializers.CharField(source="movie.title", read_only=True)  # 显示电影标题 / Display the movie title
 
     class Meta:
         model = Review
         fields = [
             "id",
-            "username",
-            "movie_title",
-            "movie",
-            "text",
-            "rating",
-            "created_at",
+            "username",  # 额外的字段：用户名 / Additional field: Username
+            "movie_title",  # 额外的字段：电影标题 / Additional field: Movie title
+            "movie",  # 外键字段 movie / Foreign key field movie
+            "text",  # 评论内容 / Review content
+            "rating",  # 评分 / Rating
+            "created_at",  # 创建时间 / Creation timestamp
         ]
-        read_only_fields = ["user"]
+        read_only_fields = ["user"]  # user 字段通过 create 方法自动处理 / The user field is handled automatically in the create method
+
+    def create(self, validated_data):
+        # 自动绑定当前请求的用户到 review 的 user 字段
+        # Automatically bind the current user from the request to the 'user' field of the review
+        user = self.context["request"].user
+        validated_data["user"] = user
+        return super().create(validated_data)
 
 
+# Comment Serializer
 class CommentSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
 
@@ -101,68 +104,27 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ["user"]
 
 
-class WatchListMovieSerializer(serializers.ModelSerializer):
-    movie = MovieSerializer(read_only=True)
-    movie_id = serializers.PrimaryKeyRelatedField(
-        queryset=Movie.objects.all(), source="movie", write_only=True
-    )
-
-    class Meta:
-        model = WatchListMovie
-        fields = ["id", "movie", "movie_id"]
-        read_only_fields = ["watch_list"]
-
-
-class WatchListSerializer(serializers.ModelSerializer):
-    movies = WatchListMovieSerializer(
-        source="watchlistmovie_set", many=True, read_only=True
-    )
+# Watch_list Serializer
+class Watch_listSerializer(serializers.ModelSerializer):
+    movies = MovieSerializer(
+        many=True, read_only=True
+    )  # 直接通过 MovieSerializer 显示电影 / Directly display movies using MovieSerializer
     user = serializers.StringRelatedField(read_only=True)
 
     class Meta:
-        model = WatchList
-        fields = ["id", "user", "movies", "added_at"]
+        model = Watch_list
+        fields = ["id", "user", "movies"]
         read_only_fields = ["user"]
 
 
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ["id", "user", "movie", "text", "rating", "created_at"]
-        read_only_fields = ["user"]  # 将 user 字段标记为只读
-
-    def create(self, validated_data):
-        # 获取当前请求的用户
-        user = self.context["request"].user  # 通过上下文获取当前用户
-        validated_data["user"] = user
-        return super().create(validated_data)
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = ["id", "user", "review", "text", "created_at"]
-
-
-class MyMoviesMovieSerializer(serializers.ModelSerializer):
-    movie = MovieSerializer(read_only=True)
-    movie_id = serializers.PrimaryKeyRelatedField(
-        queryset=Movie.objects.all(), source="movie", write_only=True
-    )
-
-    class Meta:
-        model = MyMoviesMovie
-        fields = ["id", "movie", "movie_id"]
-        read_only_fields = ["my_movies"]
-
-
-class MyMoviesSerializer(serializers.ModelSerializer):
-    movies = MyMoviesMovieSerializer(
-        source="mymoviesmovie_set", many=True, read_only=True
-    )
+# My_movies Serializer
+class My_moviesSerializer(serializers.ModelSerializer):
+    movies = MovieSerializer(
+        many=True, read_only=True
+    )  # 直接通过 MovieSerializer 显示电影 / Directly display movies using MovieSerializer
     user = serializers.StringRelatedField(read_only=True)
 
     class Meta:
-        model = MyMovies
-        fields = ["id", "user", "movies", "watched_at"]
+        model = My_movies
+        fields = ["id", "user", "movies"]
         read_only_fields = ["user"]
