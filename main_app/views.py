@@ -1,11 +1,12 @@
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework import generics, status, permissions, filters # modify these imports to match
 # from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
+
+
 
 from .serializers import (
     UserSerializer,
@@ -14,9 +15,11 @@ from .serializers import (
     WatchListSerializer,
     WatchListMovieSerializer,
     ReviewSerializer,
+    MyMoviesSerializer,
+    MyMoviesMovieSerializer,
 )
 
-from .models import Movie, Genre, WatchList, WatchListMovie, Review, Comment
+from .models import Movie, Genre, WatchList, WatchListMovie, Review, Comment, MyMovies, MyMoviesMovie
 
 # Create your views here.
 class Home(APIView):
@@ -35,8 +38,6 @@ from django.shortcuts import get_object_or_404
 
 
 from .serializers import UserSerializer, ReviewSerializer, CommentSerializer
-
-from .filters import MovieFilter
 
 
 # Create your views here.
@@ -170,12 +171,6 @@ class MovieView(APIView):
     search_fields = ['title', 'description']
     ordering_fields = ['title', 'year_made', 'created_at']
 
-class MovieListView(ListAPIView):
-    queryset = Movie.objects.all()
-    serializer_class = MovieSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = MovieFilter
-
 class MovieDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
@@ -193,6 +188,74 @@ class MovieReviewsView(generics.ListCreateAPIView):
             user=self.request.user,
             movie_id=self.kwargs['pk']
         )
+
+class MyMoviesView(generics.ListCreateAPIView):
+    serializer_class = MyMoviesSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return MyMovies.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        if MyMovies.objects.filter(user=self.request.user).exists():
+            raise serializers.ValidationError("User already has a mymovies")
+        serializer.save(user=self.request.user)
+
+class MyMoviesDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MyMoviesSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return MyMovies.objects.filter(user=self.request.user)
+
+class AddToMyMoviesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            mymovies = MyMovies.objects.get(user=request.user)
+            serializer = MyMoviesMovieSerializer(data=request.data)
+            
+            if serializer.is_valid():
+                try:
+                    serializer.save(my_movies=mymovies)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                except Exception:
+                    return Response(
+                        {"detail": "Movie already in mymovies"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except MyMovies.DoesNotExist:
+            return Response(
+                {"detail": "Mymovies not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+class RemoveFromMyMoviesView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            mymovies = MyMovies.objects.get(user=request.user)
+            try:
+                movie_id = request.data.get('movie_id')
+                mymovies_movie = MyMoviesMovie.objects.get(
+                    my_movies=mymovies,
+                    movie_id=movie_id
+                )
+                mymovies_movie.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except MyMoviesMovie.DoesNotExist:
+                return Response(
+                    {"detail": "Movie not found in mymovies"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        except MyMovies.DoesNotExist:
+            return Response(
+                {"detail": "Mymovies not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class GenreListCreateView(generics.ListCreateAPIView):
     queryset = Genre.objects.all()
@@ -226,26 +289,27 @@ class WatchListDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AddToWatchListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, pk):
-        try:
-            watchlist = WatchList.objects.get(user=request.user)
-            serializer = WatchListMovieSerializer(data=request.data)
-            
-            if serializer.is_valid():
-                try:
-                    serializer.save(watch_list=watchlist)
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-                except Exception:
-                    return Response(
-                        {"detail": "Movie already in watchlist"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except WatchList.DoesNotExist:
-            return Response(
-                {"detail": "Watchlist not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+def post(self, request, pk):
+    try:
+        watchlist = WatchList.objects.get(user=request.user)
+        movie = get_object_or_404(Movie, pk=pk)  # Assuming you have a Movie model
+
+        serializer = WatchListMovieSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                serializer.save(watch_list=watchlist, movie=movie)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response(
+                    {"detail": str(e)},  # Return the exception message for clarity
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except WatchList.DoesNotExist:
+        return Response(
+            {"detail": "Watchlist not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
 
 class RemoveFromWatchListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -360,3 +424,4 @@ class CommentDetailAPIView(APIView):
         comment = get_object_or_404(Comment, pk=pk)
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
