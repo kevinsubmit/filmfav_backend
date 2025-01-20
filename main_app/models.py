@@ -1,56 +1,31 @@
 from django.db import models
 from django.contrib.auth.models import User
-# 用于存储用户的基本信息。# Used to store basic user information.
-# no need django already do it for us
-
-# class User(models.Model):
-#     username = models.CharField(max_length=255, unique=True)
-#     email = models.EmailField(unique=True)
-#     password_hash = models.CharField(max_length=255)
-
-#     def __str__(self):
-#         return self.username
 
 
- # 用于存储电影类型。Used to store movie genres.
+
+# 用于存储电影类型。Used to store movie genres.
 class Genre(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
-    
+
+
 # 用于存储电影的基本信息。# Used to store basic information of movies.
 class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     year_made = models.IntegerField()
     poster_url = models.URLField()
-    genres = models.ManyToManyField(Genre, related_name='movies')
+    genres = models.ManyToManyField(
+        Genre, related_name="movies"
+    )  # table Genre with table Movie:many to many
 
     def __str__(self):
         return self.title
 
 
-
-
-# movie_genre 中间表模型（多对多关系）
-# 通过中间表将电影与类型关联起来。
-# movie_genre intermediate table model (many-to-many relationship)
-# Associate movies with genres through the intermediate table.
-
-
-class MovieGenre(models.Model):
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("movie", "genre")  # 联合唯一约束# Join unique constraint
-
-    def __str__(self):
-        return f"{self.movie.title} - {self.genre.name}"
-
-
-# 用于存储用户对电影的评价 Used to store users' ratings of movies
+# 用于存储用户对电影的评价 Used to store users' reviews of movies
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
@@ -73,52 +48,20 @@ class Comment(models.Model):
         return f"Comment by {self.user.username} on {self.review.movie.title}"
 
 
-# 每个用户有一个 watch_list。# Each user has one watch_list.
-class WatchList(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    added_at = models.DateTimeField(auto_now_add=True)
+# 每个用户有一个 Watch_list# Each user has one Watch_list.
+class Watch_list(models.Model):
+    # table User with table Watch_list:one to one
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # 1对1 one to one
+    movies = models.ManyToManyField(Movie, related_name="watchlists")  # 多对多 many to many
 
     def __str__(self):
         return f"{self.user.username}'s WatchList"
 
 
-# 表示用户 watch_list 下的多部电影。# indicates multiple movies under the user's watch_list.
-class WatchListMovie(models.Model):
-    watch_list = models.ForeignKey(WatchList, on_delete=models.CASCADE)
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = (
-            "watch_list",
-            "movie",
-        )  # 联合唯一约束 # Join unique constraint
-
-    def __str__(self):
-        return f"{self.watch_list.user.username} added {self.movie.title} to WatchList"
-
-
-# 每个用户有一个 my_movies。# Each user has one my_movies.
-class MyMovies(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    watched_at = models.DateTimeField(auto_now_add=True)
+# 每个用户有一个 My_movies   # Each user has one My_movies.
+class My_movies(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)# 1对1 one to one
+    movies = models.ManyToManyField(Movie, related_name="mymovies")   # 多对多 many to many
 
     def __str__(self):
         return f"{self.user.username}'s MyMovies"
-
-
-# my_movies_movie 中间表模型（多对多关系）
-# 表示用户 my_movies 下的多部电影。
-# my_movies_movie intermediate table model (many-to-many relationship)
-# Represents multiple movies under the user my_movies.
-
-
-class MyMoviesMovie(models.Model):
-    my_movies = models.ForeignKey(MyMovies, on_delete=models.CASCADE)
-    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ("my_movies", "movie")  # 联合唯一约束# Join unique constraint
-
-    def __str__(self):
-        return f"{self.my_movies.user.username} watched {self.movie.title}"
-
