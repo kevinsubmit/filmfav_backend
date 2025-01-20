@@ -1,5 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+
 from rest_framework import (
     generics,
     status,
@@ -56,17 +58,26 @@ class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
     def create(self, request, *args, **kwargs):
+        # Check if username already exists
+        username = request.data.get("username")
+        if User.objects.filter(username=username).exists():
+            raise ValidationError({"username": ["A user with that username already exists."]})
+
+        # Proceed with the usual create process if the username is unique
         response = super().create(request, *args, **kwargs)
         user = User.objects.get(username=response.data["username"])
+        
+        # Generate refresh and access tokens
         refresh = RefreshToken.for_user(user)
+        
         return Response(
             {
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
                 "user": response.data,
-            }
+            },
+            status=status.HTTP_201_CREATED  # Status for successful creation
         )
-
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
