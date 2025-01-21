@@ -2,3 +2,4 @@ cacollector/.env
 filmfav_backend/__pycache__/
 main_app/__pycache__/
 main_app/migrations/__pycache__/
+filmfav_backend/.env
