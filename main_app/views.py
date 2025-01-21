@@ -127,11 +127,14 @@ class MovieList(APIView):
 # 增加电影 movies (POST)
 class MovieCreate(APIView):
     permission_classes = [permissions.IsAdminUser]
+
     def post(self, request):
-        serializer = MovieSerializer(data=request.data)
+        movie_data = request.data.get("movies", [])
+        serializer = MovieSerializer(data=movie_data, many=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
