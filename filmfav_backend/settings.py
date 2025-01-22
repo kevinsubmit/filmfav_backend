@@ -32,7 +32,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-@3$#u&1%io^du3jar$k5-5fg
 DEBUG = env('DEBUG', default=True)
 
 # Allowed hosts for the application
-ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,.herokuapp.com').split(',')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,.herokuapp.com,localhost').split(',')
 
 # CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS', default="http://localhost:3000").split(',')
 CORS_ALLOW_ALL_ORIGINS = True
