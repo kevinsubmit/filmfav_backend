@@ -35,9 +35,9 @@ DEBUG = env('DEBUG', default=True)
 ALLOWED_HOSTS = env('ALLOWED_HOSTS', default='localhost,127.0.0.1,.herokuapp.com,localhost').split(',')
 
 # CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS', default="http://localhost:3000").split(',')
-# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOW__ORIGINS = ["http://localhost:5173",]
+# CORS_ALLOW__ORIGINS = ["http://localhost:5173",]
 
 # JWT settings (access and refresh token lifetimes)
 JWT_ACCESS_TOKEN_LIFETIME = timedelta(days=env.int('JWT_ACCESS_TOKEN_LIFETIME', default=1))
