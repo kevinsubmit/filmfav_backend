@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 
 from rest_framework import (
     generics,
@@ -123,6 +124,21 @@ class MovieList(APIView):
         serializer = MovieSerializer(movies, many=True)
         return Response(serializer.data)
 
+
+
+class MoviePagination(PageNumberPagination):
+    page_size = 20  
+    page_size_query_param = 'page_size'
+    max_page_size = 100  
+
+class MovieListView(APIView):
+    def get(self, request):
+    
+        movies = Movie.objects.all()
+        paginator = MoviePagination()
+        result_page = paginator.paginate_queryset(movies, request)
+        serializer = MovieSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 # 增加电影 movies (POST)
 class MovieCreate(APIView):
