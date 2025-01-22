@@ -355,9 +355,15 @@ class RemoveMovieFromMyMovies(APIView):
 class ReviewListCreateAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    # get all reviews
-    def get(self, request):
-        reviews = Review.objects.all()
+    # Get all reviews for a specific movie
+    def get(self, request, movie_id=None):
+        if movie_id:
+            # Filter reviews by movie_id
+            reviews = Review.objects.filter(movie__id=movie_id)
+        else:
+            # Get all reviews if no movie_id is provided
+            reviews = Review.objects.all()
+        
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data)
 
@@ -375,24 +381,24 @@ class ReviewListCreateAPIView(APIView):
 class ReviewDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    # 获取单个评论的详细信息 get the signle review's detail
-    def get(self, request, pk):
-        review = get_object_or_404(Review, pk=pk)
+    def get(self, request, review_id):
+        review = get_object_or_404(Review, pk=review_id)
         serializer = ReviewSerializer(review)
         return Response(serializer.data)
 
-    def put(self, request, pk):
-        review = get_object_or_404(Review, pk=pk)
-        serializer = ReviewSerializer(review, data=request.data)
+    def put(self, request, review_id):
+        review = get_object_or_404(Review, pk=review_id)
+        serializer = ReviewSerializer(review, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
-        review = get_object_or_404(Review, pk=pk)
+    def delete(self, request, review_id):
+        review = get_object_or_404(Review, pk=review_id)
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 # Comment API (get、update、delete）
