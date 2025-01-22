@@ -18,7 +18,7 @@ class Movie(models.Model):
     year_made = models.IntegerField()
     poster_url = models.URLField()
     genres = models.ManyToManyField(
-        Genre, related_name="movies"
+        Genre, related_name="related_movies"
     )  # table Genre with table Movie:many to many
 
     def __str__(self):
