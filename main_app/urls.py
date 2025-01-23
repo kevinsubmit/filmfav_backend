@@ -8,6 +8,7 @@ from .views import (
     CommentListCreateAPIView,
     CommentDetailAPIView,
     MovieList,
+    MovieListView,
     MovieCreate,
     MovieDetail,
     MovieUpdate,
@@ -29,7 +30,7 @@ urlpatterns = [
     path("reviews/<int:review_id>/", ReviewDetailAPIView.as_view(), name="review-detail"),  # 获取单个评论
     path("reviews/<int:review_id>/comments/", CommentListCreateAPIView.as_view(), name="comment-list-create"),
     path("comments/<int:pk>/", CommentDetailAPIView.as_view(), name="comment-detail"),
-    path("movies/", MovieList.as_view(), name="movie-list"),
+    path("movies/", MovieListView.as_view(), name="movie-list"),
     path("movies/create/", MovieCreate.as_view(), name="movie-create"),
     path("movies/<int:pk>/", MovieDetail.as_view(), name="movie-detail"),
     path("movies/<int:pk>/update/", MovieUpdate.as_view(), name="movie-update"),

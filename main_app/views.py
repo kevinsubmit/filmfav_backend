@@ -404,6 +404,13 @@ class ReviewDetailAPIView(APIView):
 
     def put(self, request, review_id):
         review = get_object_or_404(Review, pk=review_id)
+        if review.user != request.user:
+            return Response(
+                {
+                    "detail":"you do not have permission to edit this review."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = ReviewSerializer(review, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -412,10 +419,13 @@ class ReviewDetailAPIView(APIView):
 
     def delete(self, request, review_id):
         review = get_object_or_404(Review, pk=review_id)
+        if review.user != request.user:
+            return Response(
+                {"detail": "You do not have permission to delete this review."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 
 # Comment API (get、update、delete）
 class CommentListCreateAPIView(APIView):
