@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
 
 from rest_framework import (
     generics,
@@ -123,6 +125,21 @@ class MovieList(APIView):
         serializer = MovieSerializer(movies, many=True)
         return Response(serializer.data)
 
+
+
+class MoviePagination(PageNumberPagination):
+    page_size = 20  
+    page_size_query_param = 'page_size'
+    max_page_size = 100  
+
+class MovieListView(APIView):
+    def get(self, request):
+    
+        movies = Movie.objects.all()
+        paginator = MoviePagination()
+        result_page = paginator.paginate_queryset(movies, request)
+        serializer = MovieSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 # 增加电影 movies (POST)
 class MovieCreate(APIView):
@@ -388,6 +405,13 @@ class ReviewDetailAPIView(APIView):
 
     def put(self, request, review_id):
         review = get_object_or_404(Review, pk=review_id)
+        if review.user != request.user:
+            return Response(
+                {
+                    "detail":"you do not have permission to edit this review."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = ReviewSerializer(review, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -396,10 +420,13 @@ class ReviewDetailAPIView(APIView):
 
     def delete(self, request, review_id):
         review = get_object_or_404(Review, pk=review_id)
+        if review.user != request.user:
+            return Response(
+                {"detail": "You do not have permission to delete this review."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 
 # Comment API (get、update、delete）
 class CommentListCreateAPIView(APIView):
@@ -435,3 +462,14 @@ class CommentDetailAPIView(APIView):
         comment = get_object_or_404(Comment, pk=pk)
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class MovieSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('query', '').strip()
+        if not query:
+            return Response([])
+        movies = Movie.objects.filter(
+            Q(title__icontains=query) 
+        )
+        serializer = MovieSerializer(movies, many=True)
+        return Response(serializer.data)
