@@ -19,6 +19,7 @@ from .views import (
     MyMoviesDetail,
     AddMovieToMyMovies,
     RemoveMovieFromMyMovies,
+    MovieSearchView,
 )
 
 urlpatterns = [
@@ -41,4 +42,5 @@ urlpatterns = [
     path("mymovies/", MyMoviesDetail.as_view(), name="watchlist-detail"),
     path("mymovies/add/", AddMovieToMyMovies.as_view(), name="add-movie-to-watchlist"),
     path("mymovies/remove/", RemoveMovieFromMyMovies.as_view(), name="remove-movie-from-watchlist"),
+    path('search/', MovieSearchView.as_view(), name='movie_search')
 ]

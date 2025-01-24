@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 
 from rest_framework import (
@@ -461,3 +462,14 @@ class CommentDetailAPIView(APIView):
         comment = get_object_or_404(Comment, pk=pk)
         comment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class MovieSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('query', '').strip()
+        if not query:
+            return Response([])
+        movies = Movie.objects.filter(
+            Q(title__icontains=query) 
+        )
+        serializer = MovieSerializer(movies, many=True)
+        return Response(serializer.data)
